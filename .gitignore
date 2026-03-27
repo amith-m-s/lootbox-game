@@ -1,0 +1,4 @@
+build/
+bytecode_modules/
+debug_info/
+.sui/
