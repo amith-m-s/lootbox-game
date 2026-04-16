@@ -1,7 +1,8 @@
-# LootBoxGame
+# 🎮 Lootbox Game (Blockchain)
 
-A fully on-chain Sui Move loot box game with:
+A blockchain-based lootbox system implementing NFT minting, randomness, and on-chain logic.
 
+---
 - shared game configuration
 - exact-price box purchase
 - verifiable on-chain randomness
@@ -26,6 +27,41 @@ A fully on-chain Sui Move loot box game with:
 - The random-opening function is `entry` and not `public`.
 - The game item is an owned object with `key, store`, so wallets can transfer it normally.
 - Loot box and item lifecycle are modeled with on-chain objects, not off-chain state.
+
+---
+
+## 🏗️ Architecture
+
+```text
+User
+ │
+ ▼
+Smart Contract (Sui Move)
+ │
+ ▼
+NFT Minting + Randomness
+```
+
+---
+
+## 🧠 Engineering Concepts
+
+* On-chain state management
+* Deterministic randomness
+* Smart contract design
+
+---
+
+## 🚧 Challenges & Solutions
+
+* Fair randomness
+  → implemented deterministic logic
+
+* Secure contract execution
+  → validated inputs and flows
+
+---
+
 
 ## Default rarity model
 
