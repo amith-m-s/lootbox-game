@@ -1,0 +1,58 @@
+name: Sui Move CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sui-move-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SUI_VERSION: testnet-1.68.1
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Cache Cargo and suiup
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo
+            ~/.suiup
+          key: suiup-${{ runner.os }}-${{ env.SUI_VERSION }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install suiup
+        run: cargo install --git https://github.com/MystenLabs/suiup.git --locked
+
+      - name: Install pinned Sui CLI
+        run: |
+          suiup install sui@${SUI_VERSION}
+          echo "$HOME/.suiup/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Sui CLI version
+        run: sui --version
+
+      - name: Initialize ephemeral Sui CLI config
+        # The CLI creates a throwaway local key on first use. Suppress its
+        # mnemonic output; CI never funds or uses this address.
+        run: sui client active-env >/dev/null 2>&1
+
+      - name: Build Move package
+        run: sui move build
+
+      - name: Run Move unit tests
+        run: sui move test

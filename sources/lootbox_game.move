@@ -95,7 +95,7 @@ entry fun init_game(
     ctx: &mut TxContext,
 ) {
     assert!(
-        common_weight + rare_weight + epic_weight + legendary_weight == 100,
+        weights_are_valid(common_weight, rare_weight, epic_weight, legendary_weight),
         EInvalidWeights
     );
 
@@ -247,7 +247,7 @@ public fun update_rarity_weights(
     legendary_weight: u8,
 ) {
     assert!(
-        common_weight + rare_weight + epic_weight + legendary_weight == 100,
+        weights_are_valid(common_weight, rare_weight, epic_weight, legendary_weight),
         EInvalidWeights
     );
 
@@ -278,9 +278,24 @@ public fun withdraw_treasury(
 }
 
 fun resolve_rarity(roll: u8, config: &GameConfig): u8 {
-    let common_cutoff = config.common_weight;
-    let rare_cutoff = common_cutoff + config.rare_weight;
-    let epic_cutoff = rare_cutoff + config.epic_weight;
+    resolve_rarity_with_weights(
+        roll,
+        config.common_weight,
+        config.rare_weight,
+        config.epic_weight,
+    )
+}
+
+/// Resolves a 0-99 roll against a validated percentage distribution.
+fun resolve_rarity_with_weights(
+    roll: u8,
+    common_weight: u8,
+    rare_weight: u8,
+    epic_weight: u8,
+): u8 {
+    let common_cutoff = common_weight;
+    let rare_cutoff = common_cutoff + rare_weight;
+    let epic_cutoff = rare_cutoff + epic_weight;
 
     if (roll < common_cutoff) {
         COMMON
@@ -291,6 +306,21 @@ fun resolve_rarity(roll: u8, config: &GameConfig): u8 {
     } else {
         LEGENDARY
     }
+}
+
+/// Uses a wider accumulator so invalid u8 inputs fail with EInvalidWeights,
+/// rather than aborting during an overflowing u8 addition.
+fun weights_are_valid(
+    common_weight: u8,
+    rare_weight: u8,
+    epic_weight: u8,
+    legendary_weight: u8,
+): bool {
+    let total = (common_weight as u64)
+        + (rare_weight as u64)
+        + (epic_weight as u64)
+        + (legendary_weight as u64);
+    total == 100
 }
 
 fun roll_power(rarity: u8, generator: &mut random::RandomGenerator): u8 {
@@ -333,4 +363,32 @@ fun rarity_name(rarity: u8): String {
     } else {
         abort EInvalidRarity
     }
+}
+
+#[test]
+fun test_default_rarity_distribution_boundaries() {
+    assert!(resolve_rarity_with_weights(0, 60, 25, 12) == COMMON, 0);
+    assert!(resolve_rarity_with_weights(59, 60, 25, 12) == COMMON, 0);
+    assert!(resolve_rarity_with_weights(60, 60, 25, 12) == RARE, 0);
+    assert!(resolve_rarity_with_weights(84, 60, 25, 12) == RARE, 0);
+    assert!(resolve_rarity_with_weights(85, 60, 25, 12) == EPIC, 0);
+    assert!(resolve_rarity_with_weights(96, 60, 25, 12) == EPIC, 0);
+    assert!(resolve_rarity_with_weights(97, 60, 25, 12) == LEGENDARY, 0);
+    assert!(resolve_rarity_with_weights(99, 60, 25, 12) == LEGENDARY, 0);
+}
+
+#[test]
+fun test_zero_weight_rarity_tiers_are_skipped() {
+    assert!(resolve_rarity_with_weights(0, 0, 100, 0) == RARE, 0);
+    assert!(resolve_rarity_with_weights(99, 0, 100, 0) == RARE, 0);
+    assert!(resolve_rarity_with_weights(0, 0, 0, 100) == EPIC, 0);
+    assert!(resolve_rarity_with_weights(99, 0, 0, 100) == EPIC, 0);
+}
+
+#[test]
+fun test_weight_validation_uses_non_overflowing_total() {
+    assert!(weights_are_valid(60, 25, 12, 3), 0);
+    assert!(!weights_are_valid(255, 1, 0, 0), 0);
+    assert!(!weights_are_valid(100, 1, 0, 0), 0);
+    assert!(!weights_are_valid(0, 0, 0, 0), 0);
 }
