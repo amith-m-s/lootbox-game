@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: ["**"]
+    branches: [main]
 
 permissions:
   contents: read
@@ -30,6 +30,7 @@ jobs:
           path: |
             ~/.cargo
             ~/.suiup
+            ~/.local/share/suiup
           key: suiup-${{ runner.os }}-${{ env.SUI_VERSION }}
 
       - name: Install Rust toolchain
