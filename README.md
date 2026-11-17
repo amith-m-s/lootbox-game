@@ -102,22 +102,21 @@ All three operations emit indexed events. Every item's full history is queryable
 
 ## Test Coverage
 
+Run the deterministic Move unit tests with the Sui CLI:
+
 ```bash
 sui move test
 ```
 
-Test suite covers:
+The current unit tests cover:
 
 | Test | What it validates |
 |---|---|
-| `test_init` | GameConfig shared object initialized correctly |
-| `test_invalid_payment` | Under/over payment aborts with correct error |
-| `test_rarity_boundaries` | Weight boundary conditions produce correct rarity |
-| `test_pity_threshold` | Counter increments correctly, forces Legendary at 30 |
-| `test_transfer` | NFT ownership changes correctly |
-| `test_burn` | NFT destroyed, event emitted, object no longer exists |
-| `test_admin_withdrawal` | Treasury withdrawal requires AdminCap |
-| `test_unauthorized_withdrawal` | Withdrawal without AdminCap aborts |
+| `test_default_rarity_distribution_boundaries` | Every inclusive/exclusive boundary in the default 60/25/12/3 distribution |
+| `test_zero_weight_rarity_tiers_are_skipped` | Distributions with zero-weight tiers do not select those tiers |
+| `test_weight_validation_uses_non_overflowing_total` | Invalid large `u8` weights are rejected without overflowing the accumulator |
+
+Transaction-level integration coverage is still needed for purchase/payment handling, randomized opening, the pity threshold, transfers, burns, and AdminCap/treasury authorization. The table above intentionally lists only tests that are present in the package.
 
 ---
 
